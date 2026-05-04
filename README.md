@@ -148,27 +148,189 @@ docker compose logs ppt-langgraph
 - 端口冲突 (18789/8000/5000 被占用)
 - Docker 资源不足
 
-### 2. LLM 调用失败
+### 2. PPT 任务卡住不执行
+
+**问题**: Worker 未启动或任务队列异常
+
+```bash
+# 检查 Worker 状态
+docker compose logs ppt-worker
+
+# 重启 Worker
+docker compose restart ppt-worker
+```
+
+### 3. LLM 调用失败
 
 检查:
 - API Key 是否正确
 - 网络是否能访问模型服务
 - 环境变量名称是否正确
 
-### 3. PPT 生成超时
+### 4. PPT 生成超时
 
 - 增加 `OPENCLAW_AGENT_EXECUTOR_TIMEOUT_MS` (建议 ≥ 1200000)
 - 检查 LLM 响应速度
 - 确认 `slide_count` 不超过合理范围 (建议 ≤ 50)
+
+## PPT Agent 双模式生成
+
+PPT Agent 支持两种模式：
+
+### 模式 A: 需求收集（同步聊天）
+- 多轮对话澄清 PPT 需求
+- Agent 追问主题、受众、风格、页数等
+- Gateway 直接响应：**生成PPT** 触发物化
+
+### 模式 B: 异步生成（任务队列）
+- 提交任务立即返回，不阻塞 HTTP
+- 实时进度推送（WebSocket）
+- 支持：/ 生成/
+
+```mermaid
+graph LR
+    A[用户] -->|发送 "生成PPT"| B[Gateway]
+    B -->|提交异步| C[LangGraph API]
+    C -->|存入队列| D[Redis RQ]
+    D -->|Worker执行| E[多智能体流水线]
+    E -->|进度更新| F[WebSocket 推送]
+    E -->|完成| F
+```
+
+---
+
+## PPT 异步任务 API
+
+### 提交任务
+```bash
+curl -X POST http://localhost:8000/v1/ppt/jobs \
+  -H "Content-Type: application/json" \
+  -d '{
+    "topic": "2024年度总结",
+    "slide_count": 15,
+    "audience": "管理层",
+    "callback_url": "http://gateway:18789/gateway/api/v1/ppt/webhook/TASK_ID"
+  }'
+```
+
+响应：
+```json
+{
+  "task_id": "ppt-abc123def456",
+  "status": "queued",
+  "poll_interval_seconds": 3
+}
+```
+
+### 查询状态
+```bash
+curl http://localhost:8000/v1/ppt/jobs/ppt-abc123def456/status
+```
+
+响应：
+```json
+{
+  "task_id": "ppt-abc123def456",
+  "status": "running",
+  "progress": 35,
+  "current_step": "匹配模板库",
+  "elapsed_seconds": 45,
+  "estimated_remaining_seconds": 120,
+  "slide_count": 15,
+  "download_url": ""
+}
+```
+
+### Webhook 回调（可选）
+
+LangGraph 完成后主动推送到 Gateway：
+```bash
+# 自动回调 URL 端点（可选
+```
+
+---
+
+## 开发模式
+
+### 热重载（修改代码立即生效
+```bash
+# 开发模式启动（代码变更自动重启）
+docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+
+# 代码变更后：
+pnpm build
+./openclawcluster/scripts/reload-gateway.sh
+```
+
+### 启用 Redis 会话存储（多实例部署）
+在 `.env` 中配置：
+```bash
+# PPT 会话状态存储（支持多实例）
+OPENCLAW_PPT_REDIS_URL=redis://redis:6379/0
+OPENCLAW_PPT_REDIS_PREFIX=openclaw:ppt:
+```
+
+---
 
 ## 目录结构
 
 ```
 aippt/
 ├── docker-compose.yml       # 统一部署配置
+├── docker-compose.dev.yml   # 开发模式配置（热重载）
 ├── .env.example             # 环境变量示例
 ├── README.md                # 本文档
 ├── openclawcluster/         # OpenClaw Gateway + Agent
+│   ├── PPT_SESSION_STORE.md  # PPT 会话存储架构文档
+│   └── scripts/reload-gateway.sh  # Gateway 热重载脚本
 ├── presenton/               # Presenton PPT 渲染引擎
 └── peip_inference_interface/  # PPT 多智能体推理引擎
+
+---
+
+## ✅ 架构验证完成
+
+### 完成日期
+2026年5月4日
+
+### 验证内容
+
+| 功能 | 状态 | 说明 |
+|------|------|------|
+| **Gateway 纯网关模式** | ✅ | 内嵌 Agent 已完全禁用 (`EMBEDDED_AGENT_DISABLED=1`) |
+| **LangGraph 外部执行** | ✅ | 所有 PPT 推理通过 `ppt-langgraph:8000/v1/run-agent` |
+| **Redis 会话存储** | ✅ | 支持多实例部署，任务状态持久化 |
+| **异步任务 + 轮询模式** | ✅ | 同步调用阻塞问题已解决 |
+| **25% 阈值进度推送** | ✅ | 通过 WebSocket 实时推送进度 |
+| **用户主动进度查询** | ✅ | 发送"进度"关键字可主动查询 |
+| **并行聊天支持** | ✅ | 生成期间可正常进行其他对话 |
+| **防重复提交** | ✅ | 同一任务不会重复创建 |
+| **完整 PPT 下载** | ✅ | 生成完成后返回可访问的下载链接 |
+
+### PPT 生成流程
+
+```
+用户发送 "生成PPT"
+    ↓
+Gateway 检测 PPT 命令 → 提交异步任务至 LangGraph
+    ↓
+LangGraph RQ Worker (ppt-worker 容器) 开始执行
+    ↓
+Gateway 轮询状态 → 每达到25%阈值 → 通过 WebSocket 推送进度
+    ↓
+用户发送 "进度" → 立即返回当前进度（即时查询）
+    ↓
+生成完成 → 推送下载链接 (Presenton:5000)
+```
+
+### 容器运行清单
+
+| 容器 | 状态 | 端口 | 职责 |
+|------|------|------|------|
+| `aippt-redis` | ✅ | 6379 | 共享 Redis |
+| `aippt-docling` | ✅ | - | 文档解析服务 |
+| `aippt-presenton` | ✅ | 5000 | PPT 渲染引擎 |
+| `aippt-ppt-langgraph` | ✅ | 8000 | API + 任务提交 |
+| `aippt-ppt-worker` | ✅ | - | RQ Worker 执行任务 |
+| `aippt-gateway` | ✅ | 18789 | 统一 API/WebSocket 网关 |
 ```

@@ -43,6 +43,8 @@ volumes:
   # OpenClaw
   openclaw-gateway-config:
     driver: local
+  openclaw-agent-state:
+    driver: local
   openclaw-workspace:
     driver: local
   # PPT LangGraph
@@ -277,6 +279,13 @@ services:
     networks:
       - aippt-internal
     restart: unless-stopped
+    # Worker 健康检查：查询 Redis 中活跃的 worker
+    healthcheck:
+      test: ["CMD", "python", "-c", "from redis import Redis; r = Redis(host='redis'); assert len(r.smembers('rq:workers')) > 0, 'no active workers'; print('ok')"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     # 启动 RQ Worker 监听队列
     command: ["python", "-c", "from reasoning.ppt.services.queue import start_worker; start_worker()"]
 
@@ -303,12 +312,20 @@ services:
       OPENCLAW_GATEWAY_BIND: lan
       OPENCLAW_GATEWAY_PORT: 18789
       OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: 1
-      # 完全禁用内嵌 Agent 推理，所有 PPT 生成使用外部 LangGraph API
+      # 完全禁用内嵌 Agent 推理，所有 Agent 调用委托到外部 LangGraph 执行器
       OPENCLAW_GATEWAY_EMBEDDED_AGENT_DISABLED: 1
       OPENCLAW_GATEWAY_ALLOW_EMBEDDED_HTTP_INGRESS: 0
       OPENCLAW_GATEWAY_SEED_WEIXIN_IF_MISSING: ${OPENCLAW_GATEWAY_SEED_WEIXIN_IF_MISSING:-1}
       # 禁用 Gateway 内嵌 ppt-orchestrator agent 注入
       OPENCLAW_GATEWAY_SEED_PPT_AGENTS: 0
+      # Agent 执行器配置
+      # 1. 通用远程执行器（同步模式，非 PPT Agent 使用）
+      OPENCLAW_AGENT_EXECUTOR_URL: http://aippt-ppt-langgraph:8000/v1/run-agent
+      # 2. PPT 专用异步执行器 Base URL（异步模式，提交任务 + 轮询）
+      OPENCLAW_PPT_EXECUTOR_BASE_URL: http://aippt-ppt-langgraph:8000
+      # 共用配置
+      OPENCLAW_AGENT_EXECUTOR_TOKEN: ${OPENCLAW_AGENT_EXECUTOR_TOKEN:-openclaw-distributed-secret-key}
+      OPENCLAW_AGENT_EXECUTOR_TIMEOUT_MS: ${OPENCLAW_AGENT_EXECUTOR_TIMEOUT_MS:-1200000}
       # LLM API Keys
       OPENAI_API_KEY: ${OPENAI_API_KEY:-ark-3f4d15de-f1b0-4ac5-a2e9-60a877642a4a-b60f8}
       OPENAI_BASE_URL: https://ark.cn-beijing.volces.com/api/coding

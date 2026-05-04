@@ -1,0 +1,43 @@
+# ============================================
+# Gateway 开发模式 - 支持热重载
+# ============================================
+#
+# 用法：
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+#
+# 特点：
+#   1. 源代码目录挂载到容器
+#   2. ts-node 直接运行 TypeScript（无需构建）
+#   3. nodemon 监听文件变化自动重启
+#
+# ============================================
+
+version: "3.8"
+
+services:
+  openclaw-gateway:
+    volumes:
+      # 挂载源代码
+      - ./openclawcluster/src:/app/src:ro
+      - ./openclawcluster/dist:/app/dist:ro
+      - ./openclawcluster/package.json:/app/package.json:ro
+      - ./openclawcluster/tsconfig.json:/app/tsconfig.json:ro
+    environment:
+      # 开发模式：nodemon 自动重启
+      - NODE_ENV=development
+      # PPT 会话存储（Redis 支持多实例）
+      - OPENCLAW_PPT_REDIS_URL=redis://redis:6379/0
+      - OPENCLAW_PPT_REDIS_PREFIX=openclaw:ppt:
+    command:
+      [
+        "npx",
+        "nodemon",
+        "--watch",
+        "/app/src",
+        "--watch",
+        "/app/dist",
+        "--ext",
+        "ts,js,json",
+        "--exec",
+        "node --experimental-specifier-resolution=node /app/dist/cli/gateway.js --allow-unconfigured --bind lan --port 18789",
+      ]
