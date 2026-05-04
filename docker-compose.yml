@@ -1,6 +1,6 @@
 # ============================================
 # AI PPT 统一部署栈 (精简版)
-# OpenClaw Gateway + Presenton + PPT LangGraph
+# 架构：OpenClaw Gateway (纯网关) + 外部 LangGraph 推理引擎 + Presenton 渲染
 # ============================================
 #
 # 快速启动:
@@ -14,11 +14,16 @@
 #   docker compose down
 #
 # 组件说明:
-#   - redis: 共享 Redis (Presenton RQ, 缓存)
+#   - redis: 共享 Redis (Presenton RQ, 缓存, 任务状态)
 #   - docling-service: Presenton 文档解析服务
 #   - presenton: PPT 渲染引擎 (:5000)
-#   - ppt-langgraph: PPT 多智能体推理引擎 (:8000)
+#   - ppt-langgraph: PPT 多智能体推理引擎 (API:8000 + Worker)
 #   - openclaw-gateway: OpenClaw 网关 (:18789)
+#
+# 架构设计:
+#   ✅ Gateway 仅作为纯 API 网关，不运行任何 Agent 推理
+#   ✅ 所有 PPT 生成通过 ppt-langgraph 外部 LangGraph API 调用
+#   ✅ ppt-orchestrator 已从 Gateway 内嵌 Agent 中永久移除
 #
 # ============================================
 
@@ -298,10 +303,12 @@ services:
       OPENCLAW_GATEWAY_BIND: lan
       OPENCLAW_GATEWAY_PORT: 18789
       OPENCLAW_ALLOW_INSECURE_PRIVATE_WS: 1
-      # 内嵌 Agent 推理 (无独立 Agent 容器)
-      OPENCLAW_GATEWAY_EMBEDDED_AGENT_DISABLED: 0
-      OPENCLAW_GATEWAY_ALLOW_EMBEDDED_HTTP_INGRESS: 1
+      # 完全禁用内嵌 Agent 推理，所有 PPT 生成使用外部 LangGraph API
+      OPENCLAW_GATEWAY_EMBEDDED_AGENT_DISABLED: 1
+      OPENCLAW_GATEWAY_ALLOW_EMBEDDED_HTTP_INGRESS: 0
       OPENCLAW_GATEWAY_SEED_WEIXIN_IF_MISSING: ${OPENCLAW_GATEWAY_SEED_WEIXIN_IF_MISSING:-1}
+      # 禁用 Gateway 内嵌 ppt-orchestrator agent 注入
+      OPENCLAW_GATEWAY_SEED_PPT_AGENTS: 0
       # LLM API Keys
       OPENAI_API_KEY: ${OPENAI_API_KEY:-ark-3f4d15de-f1b0-4ac5-a2e9-60a877642a4a-b60f8}
       OPENAI_BASE_URL: https://ark.cn-beijing.volces.com/api/coding
