@@ -26,6 +26,32 @@ Redis (:6379)              Docling (:8001)
 
 ## 快速开始
 
+### 0. 克隆仓库（含子模块）
+
+本项目使用 Git Submodule 管理三个子仓库，请使用以下方式克隆：
+
+```bash
+# 方式一：一次性克隆所有子模块（推荐）
+git clone --recursive git@github.com:secosun/dockerppt.git aippt
+cd aippt
+
+# 方式二：分步克隆
+git clone git@github.com:secosun/dockerppt.git aippt
+cd aippt
+git submodule update --init --recursive
+
+# 后续更新子模块到最新版本
+git submodule update --remote --merge
+```
+
+### 子模块说明
+
+| 子模块 | 仓库 | 说明 |
+|--------|------|------|
+| `openclawcluster/` | `secosun/openclawcluster.git` | OpenClaw Gateway 统一入口 |
+| `peip_inference_interface/` | `secosun/pptagents.git` | PPT LangGraph 多智能体推理引擎 |
+| `presenton/` | `secosun/presenton.git` | PPT 渲染引擎 (MD → PPTX) |
+
 ### 1. 环境配置
 
 ```bash
