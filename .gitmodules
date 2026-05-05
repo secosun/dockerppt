@@ -1,0 +1,9 @@
+[submodule "openclawcluster"]
+	path = openclawcluster
+	url = git@github.com:secosun/openclawcluster.git
+[submodule "peip_inference_interface"]
+	path = peip_inference_interface
+	url = git@github.com:secosun/pptagents.git
+[submodule "presenton"]
+	path = presenton
+	url = git@github.com:secosun/presenton.git
