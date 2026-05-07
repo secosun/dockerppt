@@ -204,6 +204,9 @@ services:
       - OPENCLAW_PPT_AGENT_MODELS=${OPENCLAW_PPT_AGENT_MODELS:-}
       # Presenton 集成 (Docker 内网)
       - PRESENTON_API_BASE_URL=http://aippt-presenton:80
+      # Presenton 公网地址 (Python 后端用于将内网地址替换为公网地址)
+      # 见 peip_inference_interface/docs/PRESENTON_DEPLOYMENT_GUIDE.md §URL 自动替换机制
+      - PRESENTON_PUBLIC_BASE_URL=${PRESENTON_PUBLIC_BASE_URL:-https://ppt.installall.cn}
       - PRESENTON_TEMPLATE_SEARCH_PATH=${PRESENTON_TEMPLATE_SEARCH_PATH:-/api/v1/nextjs/templates}
       - PRESENTON_TEMPLATE_SEARCH_METHOD=GET
       - PRESENTON_TEMPLATE_SCHEMA_PATH=${PRESENTON_TEMPLATE_SCHEMA_PATH:-/api/v1/nextjs/template?group={templateKey}}
@@ -265,6 +268,9 @@ services:
       - OPENCLAW_PPT_AGENT_MODELS=${OPENCLAW_PPT_AGENT_MODELS:-}
       # Presenton 集成 (Docker 内网)
       - PRESENTON_API_BASE_URL=http://aippt-presenton:80
+      # Presenton 公网地址 (Python 后端用于将内网地址替换为公网地址)
+      # 见 peip_inference_interface/docs/PRESENTON_DEPLOYMENT_GUIDE.md §URL 自动替换机制
+      - PRESENTON_PUBLIC_BASE_URL=${PRESENTON_PUBLIC_BASE_URL:-https://ppt.installall.cn}
       - PRESENTON_TEMPLATE_SEARCH_PATH=${PRESENTON_TEMPLATE_SEARCH_PATH:-/api/v1/nextjs/templates}
       - PRESENTON_TEMPLATE_SEARCH_METHOD=GET
       - PRESENTON_TEMPLATE_SCHEMA_PATH=${PRESENTON_TEMPLATE_SCHEMA_PATH:-/api/v1/nextjs/template?group={templateKey}}

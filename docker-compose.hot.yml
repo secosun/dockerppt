@@ -1,0 +1,65 @@
+version: "3.8"
+
+# PPT 生成系统 - 热开发配置
+# 用法: docker-compose -f docker-compose.yml -f docker-compose.hot.yml up -d
+#
+# 特性:
+#   ✅ Python 代码修改自动生效 (重启容器即可，无需 rebuild)
+#   ✅ Gateway TypeScript 支持本地编译后立即同步
+#   ✅ 保留所有数据卷 (redis, outputs)
+#   ✅ 开发模式日志更详细
+
+services:
+  # ──────────────────────────────────────────────────────────
+  # LangGraph 后端 (Python) - 热重载
+  # ──────────────────────────────────────────────────────────
+  ppt-langgraph:
+    volumes:
+      # 源代码挂载 (可写!)
+      - ./peip_inference_interface/src:/app/src:ro
+      - ./peip_inference_interface/outputs:/app/outputs
+    environment:
+      - LOG_LEVEL=DEBUG
+      - PYTHONDONTWRITEBYTECODE=1
+    command: python -m uvicorn reasoning.api.rest:app --host 0.0.0.0 --port 8000 --reload
+
+  # ──────────────────────────────────────────────────────────
+  # PPT Worker (Python) - 热重载
+  # ──────────────────────────────────────────────────────────
+  ppt-worker:
+    volumes:
+      # 源代码挂载 (可写!)
+      - ./peip_inference_interface/src:/app/src:ro
+      - ./peip_inference_interface/outputs:/app/outputs
+    environment:
+      - LOG_LEVEL=DEBUG
+      - PYTHONDONTWRITEBYTECODE=1
+    # 开发模式: watchmedo 自动重启 worker (文件变化时)
+    command: >
+      sh -c "pip install watchdog && watchmedo auto-restart
+             --directory=/app/src
+             --pattern='*.py'
+             --recursive
+             --
+             python -m rq.cli worker ppt:high ppt:default ppt:low
+             --url redis://redis:6379/0"
+
+  # ──────────────────────────────────────────────────────────
+  # Gateway (TypeScript) - 热同步
+  # ──────────────────────────────────────────────────────────
+  openclaw-gateway:
+    volumes:
+      - ./openclawcluster/dist:/app/dist:ro
+      - ./openclawcluster/.openclaw:/root/.openclaw
+    environment:
+      - LOG_LEVEL=debug
+      - OPENCLAW_GATEWAY_LOG_LEVEL=debug
+      # 启用开发模式的更详细日志
+      - RUST_LOG=debug
+
+  # ──────────────────────────────────────────────────────────
+  # Presenton - 保持不变
+  # ──────────────────────────────────────────────────────────
+  presenton:
+    volumes:
+      - ./presenton/data:/data

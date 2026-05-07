@@ -77,6 +77,39 @@ docker compose up -d
 docker compose logs -f
 ```
 
+## 开发模式与热重载
+
+> ⚠️ **重要经验**：直接 `docker compose up -d` 不会挂载本地代码！
+> 容器运行的是镜像构建时的旧版本，本地编译不生效。
+
+### 启用热开发模式
+
+```bash
+# 方式一：完整热开发环境（推荐）
+./scripts/hot-dev-start.sh
+
+# 方式二：仅 Gateway 启用热挂载
+docker rm -f aippt-gateway
+docker-compose -f docker-compose.yml -f docker-compose.hot.yml up -d openclaw-gateway
+```
+
+### 开发工作流
+
+| 修改内容 | 生效方式 |
+|---------|---------|
+| Python (LangGraph/Worker) | 🔄 自动重载 (uvicorn --reload / watchmedo) |
+| TypeScript (Gateway) | 手动执行 `./scripts/hot-reload-gateway.sh` 编译并重启 |
+
+### 验证热挂载生效
+
+```bash
+# 检查容器内 dist 时间戳与本地一致
+docker exec aippt-gateway ls -la /app/dist/ | head -5
+
+# 确认 volume 挂载
+docker inspect aippt-gateway | grep -E 'dist|Source' | head -5
+```
+
 ### 3. 验证部署
 
 ```bash
