@@ -3,8 +3,40 @@ set -e
 
 # AI PPT 代码提交并推送脚本（支持 Git 子模块）
 # 用法: ./scripts/git-deploy.sh [分支名]
+#
+# 经代理推送（示例）:
+#   # 本环境 SOCKS 在 192.168.3.142:10808（推荐 socks5h，DNS 也走代理）:
+#   export ALL_PROXY=socks5h://192.168.3.142:10808
+#   # 若 SOCKS 在本机: ALL_PROXY=socks5h://127.0.0.1:10808
+#   # HTTP 代理: export HTTP_PROXY=http://127.0.0.1:7890
+#   ./scripts/git-deploy.sh
+# 优先级: ALL_PROXY > SOCKS5_PROXY > HTTPS_PROXY/HTTP_PROXY
+# 子模块若为 git@github.com，默认在本次 push 时改写为 https://github.com/ 以便 libcurl 走上述代理。
+# 若你坚持用 SSH 走代理，请自行设置 GIT_SSH_COMMAND，并执行: GIT_REWRITE_GITHUB_SSH_TO_HTTPS=0 ./scripts/git-deploy.sh
 
 cd "$(dirname "$0")/.."
+
+# ---------- Git push 代理（仅影响本脚本内的 push 调用）----------
+_git_push_args=()
+_gp=""
+if [ -n "${ALL_PROXY:-}" ]; then
+	_gp="$ALL_PROXY"
+elif [ -n "${SOCKS5_PROXY:-}" ]; then
+	_gp="$SOCKS5_PROXY"
+elif [ -n "${HTTPS_PROXY:-}" ] || [ -n "${HTTP_PROXY:-}" ]; then
+	_gp="${HTTPS_PROXY:-$HTTP_PROXY}"
+fi
+if [ -n "$_gp" ]; then
+	_git_push_args+=(-c "http.proxy=${_gp}" -c "https.proxy=${_gp}")
+	if [ "${GIT_REWRITE_GITHUB_SSH_TO_HTTPS:-1}" != "0" ]; then
+		_git_push_args+=(-c "url.https://github.com/.insteadOf=git@github.com:")
+	fi
+	echo "[git-deploy] 使用代理: ${_gp}"
+fi
+
+git_push() {
+	git "${_git_push_args[@]}" push "$@"
+}
 
 BRANCH="${1:-main}"
 
@@ -82,7 +114,7 @@ if [ $HAS_SUBMODULES -eq 1 ]; then
             if [ -n "$SM_COMMITS" ]; then
                 echo "  待推送的提交:"
                 echo "$SM_COMMITS" | head -3 | sed 's/^/    /'
-                git push origin "$SM_BRANCH"
+                git_push origin "$SM_BRANCH"
                 echo "  ✅ $sm 推送完成"
             else
                 echo "  ✅ $sm 无待推送内容"
@@ -98,7 +130,7 @@ fi
 echo ""
 echo "=========================================="
 echo "正在推送主项目: origin/$BRANCH ..."
-git push origin "$BRANCH"
+git_push origin "$BRANCH"
 
 echo ""
 echo "=========================================="
