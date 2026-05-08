@@ -52,6 +52,8 @@ git submodule update --remote --merge
 | `peip_inference_interface/` | `secosun/pptagents.git` | PPT LangGraph 多智能体推理引擎 |
 | `presenton/` | `secosun/presenton.git` | PPT 渲染引擎 (MD → PPTX) |
 
+**布局约定**：上述三者均为 **aippt 仓库的直接子模块**，在根目录下**并列**（同级目录），由本仓库的 `.gitmodules` 统一登记。`peip_inference_interface` 与 `presenton` **不要**再作为子模块嵌套进 `openclawcluster/`（避免重复检出与路径混乱）。各子仓库若还有其它依赖，可在**各自仓库内**单独维护子模块；初始化时使用 `git submodule update --init --recursive` 会按各子仓库自己的 `.gitmodules` 继续向下拉取。
+
 ### 1. 环境配置
 
 ```bash
@@ -306,6 +308,10 @@ LangGraph 完成后主动推送到 Gateway：
 ```bash
 # 自动回调 URL 端点（可选
 ```
+
+### 公网下载链接（微信 / 外网用户）
+
+任务完成时 `download_url` 若为 `file:///app/outputs/...`，外网无法打开。请在 `.env` 中配置 **`PPT_OUTPUTS_PUBLIC_BASE_URL`**（LangGraph 服务对外的 `https://域名` 或 `http://IP:端口`，无尾斜杠），与 FastAPI 的 **`/outputs`** 静态挂载拼接后生成可分享链接。说明见 `peip_inference_interface/docs/PRESENTON_DEPLOYMENT_GUIDE.md`（§LangGraph 产物公网下载）。
 
 ---
 

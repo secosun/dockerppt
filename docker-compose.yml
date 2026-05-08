@@ -126,7 +126,7 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
       - GOOGLE_API_KEY=${GOOGLE_API_KEY:-}
       - GOOGLE_MODEL=${GOOGLE_MODEL:-}
-      - OLLAMA_URL=${OLLAMA_URL:-}
+      - OLLAMA_URL=${OLLAMA_URL:-http://192.168.3.142:11450}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
       - CUSTOM_LLM_URL=${CUSTOM_LLM_URL:-}
       - CUSTOM_LLM_API_KEY=${CUSTOM_LLM_API_KEY:-}
@@ -180,10 +180,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - PPT_REDIS_URL=redis://redis:6379/0
       # LLM 路由配置
-      - REASONING_PPT_LLM=${REASONING_PPT_LLM:-anthropic}
+      - REASONING_PPT_LLM=${REASONING_PPT_LLM:-ollama}
       - PPT_LLM_AGENT_ALLOWLIST=${PPT_LLM_AGENT_ALLOWLIST:-orchestrator,template_selector,outline_planner,data,material_selector,quality_reviewer}
-      # Ollama 本地模型 (可选)
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11450}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://192.168.3.142:11450}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
       # Anthropic / 火山
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-ark-3f4d15de-f1b0-4ac5-a2e9-60a877642a4a-b60f8}
@@ -244,10 +243,9 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - PPT_REDIS_URL=redis://redis:6379/0
       # LLM 路由配置
-      - REASONING_PPT_LLM=${REASONING_PPT_LLM:-anthropic}
+      - REASONING_PPT_LLM=${REASONING_PPT_LLM:-ollama}
       - PPT_LLM_AGENT_ALLOWLIST=${PPT_LLM_AGENT_ALLOWLIST:-orchestrator,template_selector,outline_planner,data,material_selector,quality_reviewer}
-      # Ollama 本地模型 (可选)
-      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11450}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://192.168.3.142:11450}
       - OLLAMA_MODEL=${OLLAMA_MODEL:-qwen2.5:7b}
       # Anthropic / 火山
       - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-ark-3f4d15de-f1b0-4ac5-a2e9-60a877642a4a-b60f8}
