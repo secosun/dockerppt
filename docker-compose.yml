@@ -214,6 +214,9 @@ services:
       - PRESENTON_ASSET_SEARCH_METHOD=GET
       - PRESENTON_MATERIALIZE_MODE=${PRESENTON_MATERIALIZE_MODE:-auto}
       - PPT_PRESENTON_MODE=${PPT_PRESENTON_MODE:-remote}
+      # LangGraph 对外公网 Origin（无尾斜杠），将 file:///app/outputs/... 转为可下载 HTTPS
+      # 须与反代到本服务 8000 的域名一致；见 peip_inference_interface/docs/PRESENTON_DEPLOYMENT_GUIDE.md
+      - PPT_OUTPUTS_PUBLIC_BASE_URL=${PPT_OUTPUTS_PUBLIC_BASE_URL:-}
     depends_on:
       redis:
         condition: service_healthy
@@ -277,6 +280,7 @@ services:
       - PRESENTON_ASSET_SEARCH_METHOD=GET
       - PRESENTON_MATERIALIZE_MODE=${PRESENTON_MATERIALIZE_MODE:-auto}
       - PPT_PRESENTON_MODE=${PPT_PRESENTON_MODE:-remote}
+      - PPT_OUTPUTS_PUBLIC_BASE_URL=${PPT_OUTPUTS_PUBLIC_BASE_URL:-}
     depends_on:
       redis:
         condition: service_healthy
