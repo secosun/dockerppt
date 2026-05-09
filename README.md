@@ -399,3 +399,8 @@ Gateway 轮询状态 → 每达到25%阈值 → 通过 WebSocket 推送进度
 | `aippt-ppt-worker` | ✅ | - | RQ Worker 执行任务 |
 | `aippt-gateway` | ✅ | 18789 | 统一 API/WebSocket 网关 |
 ```
+
+
+cd /home/sunxike/lpls/aippt/presenton && git push origin master
+cd /home/sunxike/lpls/aippt/peip_inference_interface && git push origin main
+cd /home/sunxike/lpls/aippt && git push origin main
