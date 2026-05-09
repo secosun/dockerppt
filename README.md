@@ -404,3 +404,12 @@ Gateway 轮询状态 → 每达到25%阈值 → 通过 WebSocket 推送进度
 cd /home/sunxike/lpls/aippt/presenton && git push origin master
 cd /home/sunxike/lpls/aippt/peip_inference_interface && git push origin main
 cd /home/sunxike/lpls/aippt && git push origin main
+
+cd /home/sunxike/lpls/aippt && docker-compose up -d --build
+
+cd ~/lpls/aippt
+docker-compose up -d ppt-langgraph ppt-worker
+
+docker ps -a | grep -E 'ppt-langgraph|ppt-worker'
+# 把列表里相关容器（含前面带一长串 id 前缀名字的）全部 docker rm -f
+docker-compose up -d ppt-langgraph ppt-worker
