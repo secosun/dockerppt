@@ -202,6 +202,11 @@ services:
       - OPENCLAW_LLM_PRIMARY=${OPENCLAW_LLM_PRIMARY:-anthropic/ark-code-latest}
       - OPENCLAW_LLM_FALLBACKS=${OPENCLAW_LLM_FALLBACKS:-qwen/qwen3.5-plus,doubao/doubao-seed-2.0-code}
       - OPENCLAW_PPT_AGENT_MODELS=${OPENCLAW_PPT_AGENT_MODELS:-}
+      # 超时控制（小于节点 timeout，给回退/重试留余量）
+      - PPT_LLM_TIMEOUT=${PPT_LLM_TIMEOUT:-40}
+      - OPENCLAW_LLM_TIMEOUT=${OPENCLAW_LLM_TIMEOUT:-40}
+      - PPT_SEARCH_TIMEOUT=${PPT_SEARCH_TIMEOUT:-4}
+      - PPT_IMAGE_SEARCH_TIMEOUT=${PPT_IMAGE_SEARCH_TIMEOUT:-4}
       # Presenton 集成 (Docker 内网)
       - PRESENTON_API_BASE_URL=http://aippt-presenton:80
       # Presenton 公网地址 (Python 后端用于将内网地址替换为公网地址)
@@ -270,6 +275,11 @@ services:
       - OPENCLAW_LLM_PRIMARY=${OPENCLAW_LLM_PRIMARY:-anthropic/ark-code-latest}
       - OPENCLAW_LLM_FALLBACKS=${OPENCLAW_LLM_FALLBACKS:-qwen/qwen3.5-plus,doubao/doubao-seed-2.0-code}
       - OPENCLAW_PPT_AGENT_MODELS=${OPENCLAW_PPT_AGENT_MODELS:-}
+      # 超时控制（小于节点 timeout，给回退/重试留余量）
+      - PPT_LLM_TIMEOUT=${PPT_LLM_TIMEOUT:-40}
+      - OPENCLAW_LLM_TIMEOUT=${OPENCLAW_LLM_TIMEOUT:-40}
+      - PPT_SEARCH_TIMEOUT=${PPT_SEARCH_TIMEOUT:-4}
+      - PPT_IMAGE_SEARCH_TIMEOUT=${PPT_IMAGE_SEARCH_TIMEOUT:-4}
       # Presenton 集成 (Docker 内网)
       - PRESENTON_API_BASE_URL=http://aippt-presenton:80
       # Presenton 公网地址 (Python 后端用于将内网地址替换为公网地址)
